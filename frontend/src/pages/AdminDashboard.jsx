@@ -1,86 +1,82 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import API from '../services/api';
 
-function ClientList() {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+function ClientForm({ onClientAdded }) {
+  const [form, setForm] = useState({
+    nomSociete: '',
+    email: '',
+    telephone: '',
+    adresse: ''
+  });
 
-  useEffect(() => {
-    fetchClients();
-  }, []);
-
-  const fetchClients = async () => {
-    try {
-      const res = await API.get('/clients');
-      setClients(res.data);
-    } catch (err) {
-      setError('Erreur lors du chargement des clients');
-    } finally {
-      setLoading(false);
-    }
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Supprimer ce client ?')) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await API.delete(`/clients/${id}`);
-      fetchClients();
+      await API.post('/clients', form);
+      alert('Client ajouté avec succès');
+      setForm({ nomSociete: '', email: '', telephone: '', adresse: '' });
+      if (onClientAdded) onClientAdded();
     } catch (err) {
-      alert('Erreur lors de la suppression');
+      alert('Erreur lors de l\'ajout');
     }
   };
-
-  if (loading) return <div style={styles.loading}>Chargement...</div>;
-  if (error) return <div style={styles.error}>{error}</div>;
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>Liste des clients</h3>
-        <span style={styles.count}>{clients.length} client(s)</span>
-      </div>
-
-      <div style={styles.tableWrapper}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Société</th>
-              <th style={styles.th}>Email</th>
-              <th style={styles.th}>Téléphone</th>
-              <th style={styles.th}>Adresse</th>
-              <th style={styles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {clients.map(client => (
-              <tr key={client._id} style={styles.tr}>
-                <td style={styles.td}>
-                  <span style={styles.clientName}>{client.nomSociete}</span>
-                </td>
-                <td style={styles.td}>{client.email}</td>
-                <td style={styles.td}>{client.telephone || '-'}</td>
-                <td style={styles.td}>{client.adresse || '-'}</td>
-                <td style={styles.td}>
-                  <div style={styles.actions}>
-                    <button style={styles.editButton}>
-                      <span style={styles.buttonIcon}>✏️</span>
-                      Modifier
-                    </button>
-                    <button 
-                      style={styles.deleteButton}
-                      onClick={() => handleDelete(client._id)}
-                    >
-                      <span style={styles.buttonIcon}>🗑️</span>
-                      Supprimer
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <h3 style={styles.title}>➕ Nouveau client</h3>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <div style={styles.grid}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Société *</label>
+            <input
+              type="text"
+              name="nomSociete"
+              value={form.nomSociete}
+              onChange={handleChange}
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Email *</label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Téléphone</label>
+            <input
+              type="text"
+              name="telephone"
+              value={form.telephone}
+              onChange={handleChange}
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Adresse</label>
+            <input
+              type="text"
+              name="adresse"
+              value={form.adresse}
+              onChange={handleChange}
+              style={styles.input}
+            />
+          </div>
+        </div>
+        <button type="submit" style={styles.button}>
+          Ajouter le client
+        </button>
+      </form>
     </div>
   );
 }
@@ -90,113 +86,62 @@ const styles = {
     backgroundColor: '#fff',
     borderRadius: '12px',
     padding: '24px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px'
+    marginBottom: '24px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
   },
   title: {
-    fontSize: '1.1rem',
+    fontSize: '1rem',
     fontWeight: 600,
     color: '#1e293b',
-    margin: 0
+    marginBottom: '20px'
   },
-  count: {
-    backgroundColor: '#f1f5f9',
-    color: '#64748b',
-    padding: '4px 12px',
-    borderRadius: '20px',
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px'
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px'
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  label: {
     fontSize: '0.85rem',
-    fontWeight: 500
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '40px',
+    fontWeight: 500,
     color: '#64748b'
   },
-  error: {
-    textAlign: 'center',
-    padding: '40px',
-    color: '#ef4444'
+  input: {
+    padding: '10px 12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    fontSize: '0.95rem',
+    transition: 'all 0.2s',
+    outline: 'none',
+    ':focus': {
+      borderColor: '#2563eb',
+      boxShadow: '0 0 0 3px rgba(37,99,235,0.1)'
+    }
   },
-  tableWrapper: {
-    overflowX: 'auto'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse'
-  },
-  th: {
-    textAlign: 'left',
-    padding: '12px 16px',
-    backgroundColor: '#f8fafc',
-    color: '#64748b',
-    fontSize: '0.85rem',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    borderBottom: '2px solid #e2e8f0'
-  },
-  tr: {
-    borderBottom: '1px solid #e2e8f0',
+  button: {
+    backgroundColor: '#2563eb',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '8px',
+    fontSize: '0.95rem',
+    fontWeight: 500,
+    cursor: 'pointer',
     transition: 'background-color 0.2s',
+    alignSelf: 'flex-start',
     ':hover': {
-      backgroundColor: '#f8fafc'
+      backgroundColor: '#1d4ed8'
     }
-  },
-  td: {
-    padding: '16px',
-    color: '#334155',
-    fontSize: '0.95rem'
-  },
-  clientName: {
-    fontWeight: 500,
-    color: '#1e293b'
-  },
-  actions: {
-    display: 'flex',
-    gap: '8px'
-  },
-  editButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '6px 12px',
-    backgroundColor: '#f1f5f9',
-    color: '#475569',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '0.85rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    ':hover': {
-      backgroundColor: '#e2e8f0'
-    }
-  },
-  deleteButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '6px 12px',
-    backgroundColor: '#fef2f2',
-    color: '#ef4444',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '0.85rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    ':hover': {
-      backgroundColor: '#fee2e2'
-    }
-  },
-  buttonIcon: {
-    fontSize: '0.9rem'
   }
 };
 
-export default ClientList;
+export default ClientForm;
