@@ -12,7 +12,7 @@ import Messagerie from '../components/Messagerie';
 import NotificationBadge from '../components/NotificationBadge';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import AdminTicketList from '../components/AdminTicketList'; // ✅ AJOUTÉ
+import AdminTicketList from '../components/AdminTicketList';
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ function AdminDashboard() {
     { id: 'factures', label: 'Factures', icon: '💰' },
     { id: 'projets', label: 'Projets', icon: '📋' },
     { id: 'messagerie', label: 'Messagerie', icon: '📬' },
-    { id: 'tickets', label: 'Tickets', icon: '🎫' } // ✅ AJOUTÉ
+    { id: 'tickets', label: 'Tickets', icon: '🎫' }
   ];
 
   const renderSection = () => {
@@ -78,7 +78,7 @@ function AdminDashboard() {
         );
       case 'messagerie':
         return <Messagerie />;
-      case 'tickets': // ✅ AJOUTÉ
+      case 'tickets':
         return (
           <div style={styles.section}>
             <AdminTicketList />
