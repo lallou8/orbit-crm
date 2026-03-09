@@ -5,6 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
 import FicheInterventionClient from './pages/FicheInterventionClient';
 import AdminInterventionDetails from './pages/AdminInterventionDetails';
+import NouveauTicket from './pages/NouveauTicket';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -32,6 +33,7 @@ function App() {
         <Route path="/client/fiche/:id" element={token && user.role === 'client' ? <FicheInterventionClient /> : <Navigate to="/login" />} />
         
         <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/client/nouveau-ticket" element={token && user.role === 'client' ? <NouveauTicket /> : <Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );
