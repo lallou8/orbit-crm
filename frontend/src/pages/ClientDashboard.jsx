@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import TicketList from '../components/TicketList';
 import InterventionList from '../components/InterventionList';
 import LicenceList from '../components/LicenceList';
@@ -13,6 +13,7 @@ import API from '../services/api';
 function ClientDashboard() {
   const navigate = useNavigate();
   const [clientInfo, setClientInfo] = useState(null);
+  const [activeSection, setActiveSection] = useState('tickets');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -40,123 +41,277 @@ function ClientDashboard() {
     navigate('/login');
   };
 
+  const sections = [
+    { id: 'tickets', label: 'Mes tickets', icon: '🎫' },
+    { id: 'interventions', label: 'Interventions', icon: '🔧' },
+    { id: 'licences', label: 'Licences', icon: '📜' },
+    { id: 'factures', label: 'Factures', icon: '💰' },
+    { id: 'messagerie', label: 'Messagerie', icon: '📬' }
+  ];
+
+  const renderSection = () => {
+    switch(activeSection) {
+      case 'tickets':
+        return (
+          <div style={styles.section}>
+            <TicketList />
+          </div>
+        );
+      case 'interventions':
+        return (
+          <div style={styles.section}>
+            <InterventionList />
+          </div>
+        );
+      case 'licences':
+        return (
+          <div style={styles.section}>
+            <LicenceList />
+          </div>
+        );
+      case 'factures':
+        return (
+          <div style={styles.section}>
+            <FactureList />
+          </div>
+        );
+      case 'messagerie':
+        return (
+          <div style={styles.section}>
+            <Messagerie />
+          </div>
+        );
+      default:
+        return (
+          <div style={styles.section}>
+            <TicketList />
+          </div>
+        );
+    }
+  };
+
   return (
     <div style={styles.container}>
-      {/* Barre du haut */}
-      <div style={styles.navbar}>
-        <div style={styles.navbarLeft}>
-          <h1 style={styles.title}>ORBIT CRM</h1>
-          {clientInfo && (
-            <span style={styles.welcomeMessage}>
-              Bonjour, <strong>{clientInfo.nomSociete}</strong>
-            </span>
-          )}
+      {/* Sidebar */}
+      <div style={styles.sidebar}>
+        <div style={styles.logoContainer}>
+          <div style={styles.logo}>ORBIT</div>
+          <div style={styles.logoBadge}>Client</div>
         </div>
-        <div style={styles.navbarRight}>
-          <Link to="/client/nouveau-ticket">
-            <button style={styles.primaryButton}>
-              + Nouveau ticket
+
+        <nav style={styles.nav}>
+          {sections.map(section => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              style={{
+                ...styles.navItem,
+                backgroundColor: activeSection === section.id ? '#2563eb' : 'transparent',
+                color: activeSection === section.id ? '#fff' : '#94a3b8'
+              }}
+            >
+              <span style={styles.navIcon}>{section.icon}</span>
+              {section.label}
             </button>
-          </Link>
-          <div style={{ position: 'relative' }}>
-            <NotificationBadge />
+          ))}
+        </nav>
+
+        <div style={styles.sidebarFooter}>
+          <div style={styles.userCard}>
+            <div style={styles.userAvatar}>
+              {clientInfo?.nomSociete?.charAt(0).toUpperCase()}
+            </div>
+            <div style={styles.userInfo}>
+              <div style={styles.userName}>{clientInfo?.nomSociete}</div>
+              <div style={styles.userRole}>Client</div>
+            </div>
           </div>
-          <button onClick={handleLogout} style={styles.secondaryButton}>
+          <button onClick={handleLogout} style={styles.logoutButton}>
+            <span style={styles.logoutIcon}>🚪</span>
             Déconnexion
           </button>
         </div>
       </div>
 
       {/* Contenu principal */}
-      <div style={styles.content}>
-        {/* Section Tickets */}
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>🎫 Mes tickets</h2>
+      <div style={styles.main}>
+        {/* En-tête */}
+        <header style={styles.header}>
+          <div style={styles.headerLeft}>
+            <h1 style={styles.pageTitle}>
+              {sections.find(s => s.id === activeSection)?.label}
+            </h1>
           </div>
-          <TicketList />
-        </div>
+          <div style={styles.headerRight}>
+            {activeSection === 'tickets' && (
+              <button 
+                onClick={() => navigate('/client/nouveau-ticket')}
+                style={styles.newButton}
+              >
+                + Nouveau ticket
+              </button>
+            )}
+            <div style={styles.notificationWrapper}>
+              <NotificationBadge />
+            </div>
+          </div>
+        </header>
 
-        {/* Section Interventions */}
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>🔧 Interventions</h2>
-          </div>
-          <InterventionList />
-        </div>
-
-        {/* Section Licences */}
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>📜 Licences</h2>
-          </div>
-          <LicenceList />
-        </div>
-
-        {/* Section Factures */}
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>💰 Factures</h2>
-          </div>
-          <FactureList />
-        </div>
-
-        {/* Section Messagerie */}
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>📬 Messagerie</h2>
-          </div>
-          <Messagerie />
+        {/* Contenu */}
+        <div style={styles.content}>
+          {renderSection()}
         </div>
       </div>
 
-      {/* ToastContainer pour les notifications */}
       <ToastContainer />
     </div>
   );
 }
 
-// Styles
+// Styles professionnels (identiques à l'admin)
 const styles = {
   container: {
+    display: 'flex',
     minHeight: '100vh',
-    backgroundColor: '#f4f7fb',
-    fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif'
+    backgroundColor: '#f8fafc',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   },
-  navbar: {
-    backgroundColor: 'white',
-    padding: '16px 32px',
+  sidebar: {
+    width: '280px',
+    backgroundColor: '#1e293b',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    boxShadow: '4px 0 20px rgba(0,0,0,0.05)'
+  },
+  logoContainer: {
+    padding: '32px 24px',
+    borderBottom: '1px solid #334155'
+  },
+  logo: {
+    fontSize: '1.8rem',
+    fontWeight: 700,
+    color: '#fff',
+    marginBottom: '4px',
+    letterSpacing: '-0.5px'
+  },
+  logoBadge: {
+    fontSize: '0.8rem',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
+  },
+  nav: {
+    flex: 1,
+    padding: '24px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  navItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px 16px',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '0.95rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    width: '100%',
+    textAlign: 'left'
+  },
+  navIcon: {
+    fontSize: '1.2rem'
+  },
+  sidebarFooter: {
+    padding: '24px 16px',
+    borderTop: '1px solid #334155'
+  },
+  userCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '16px'
+  },
+  userAvatar: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    backgroundColor: '#2563eb',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.2rem',
+    fontWeight: 600
+  },
+  userInfo: {
+    flex: 1
+  },
+  userName: {
+    color: '#fff',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    marginBottom: '4px'
+  },
+  userRole: {
+    color: '#94a3b8',
+    fontSize: '0.8rem'
+  },
+  logoutButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    backgroundColor: '#334155',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    width: '100%',
+    ':hover': {
+      backgroundColor: '#475569'
+    }
+  },
+  logoutIcon: {
+    fontSize: '1rem'
+  },
+  main: {
+    flex: 1,
+    marginLeft: '280px',
+    padding: '32px'
+  },
+  header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100
+    marginBottom: '32px'
   },
-  navbarLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '32px'
+  headerLeft: {
+    flex: 1
   },
-  navbarRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  title: {
-    fontSize: '1.5rem',
+  pageTitle: {
+    fontSize: '2rem',
     fontWeight: 600,
-    color: '#1e293b',
+    color: '#0f172a',
     margin: 0
   },
-  welcomeMessage: {
-    color: '#64748b',
-    fontSize: '0.95rem'
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px'
   },
-  primaryButton: {
-    backgroundColor: '#3b82f6',
-    color: 'white',
+  newButton: {
+    backgroundColor: '#2563eb',
+    color: '#fff',
     border: 'none',
     padding: '10px 20px',
     borderRadius: '8px',
@@ -165,46 +320,20 @@ const styles = {
     cursor: 'pointer',
     transition: 'background-color 0.2s',
     ':hover': {
-      backgroundColor: '#2563eb'
+      backgroundColor: '#1d4ed8'
     }
   },
-  secondaryButton: {
-    backgroundColor: 'white',
-    color: '#64748b',
-    border: '1px solid #e2e8f0',
-    padding: '10px 20px',
-    borderRadius: '8px',
-    fontSize: '0.95rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    ':hover': {
-      backgroundColor: '#f8fafc',
-      borderColor: '#cbd5e1'
-    }
+  notificationWrapper: {
+    position: 'relative'
   },
   content: {
-    padding: '32px',
-    maxWidth: '1400px',
-    margin: '0 auto'
+    maxWidth: '1400px'
   },
   section: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
     padding: '24px',
-    marginBottom: '32px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-  },
-  sectionHeader: {
-    marginBottom: '20px',
-    borderBottom: '2px solid #f1f5f9',
-    paddingBottom: '12px'
-  },
-  sectionTitle: {
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    color: '#1e293b',
-    margin: 0
+    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
   }
 };
 
