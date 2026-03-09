@@ -1,303 +1,202 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ClientList from '../components/ClientList';
-import ClientForm from '../components/ClientForm';
-import AdminInterventionList from '../components/AdminInterventionList';
+import { useEffect, useState } from 'react';
 import API from '../services/api';
-import AdminFactureList from '../components/AdminFactureList';
-import ProjetList from '../components/ProjetList';
-import ProjetForm from '../components/ProjetForm';
-import StatsDashboard from '../components/StatsDashboard';
-import Messagerie from '../components/Messagerie';
-import NotificationBadge from '../components/NotificationBadge';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
-function AdminDashboard() {
-  const navigate = useNavigate();
-  const [adminInfo, setAdminInfo] = useState(null);
-  const [refreshClients, setRefreshClients] = useState(false);
-  const [activeSection, setActiveSection] = useState('dashboard');
+function ClientList() {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    fetchClients();
+  }, []);
 
-    if (!token || user.role !== 'admin') {
-      navigate('/login');
-      return;
-    }
-
-    setAdminInfo({
-      email: user.email,
-      role: 'Administrateur'
-    });
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
-
-  const handleClientAdded = () => {
-    setRefreshClients(!refreshClients);
-  };
-
-  const sections = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
-    { id: 'clients', label: 'Clients', icon: '👥' },
-    { id: 'interventions', label: 'Interventions', icon: '🔧' },
-    { id: 'factures', label: 'Factures', icon: '💰' },
-    { id: 'projets', label: 'Projets', icon: '📋' },
-    { id: 'messagerie', label: 'Messagerie', icon: '📬' }
-  ];
-
-  const renderSection = () => {
-    switch(activeSection) {
-      case 'dashboard':
-        return <StatsDashboard />;
-      case 'clients':
-        return (
-          <>
-            <ClientForm onClientAdded={handleClientAdded} />
-            <ClientList key={refreshClients} />
-          </>
-        );
-      case 'interventions':
-        return <AdminInterventionList />;
-      case 'factures':
-        return <AdminFactureList />;
-      case 'projets':
-        return (
-          <>
-            <ProjetForm onProjetAdded={() => window.location.reload()} />
-            <ProjetList />
-          </>
-        );
-      case 'messagerie':
-        return <Messagerie />;
-      default:
-        return <StatsDashboard />;
+  const fetchClients = async () => {
+    try {
+      const res = await API.get('/clients');
+      setClients(res.data);
+    } catch (err) {
+      setError('Erreur lors du chargement des clients');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Supprimer ce client ?')) return;
+    try {
+      await API.delete(`/clients/${id}`);
+      fetchClients();
+    } catch (err) {
+      alert('Erreur lors de la suppression');
+    }
+  };
+
+  if (loading) return <div style={styles.loading}>Chargement...</div>;
+  if (error) return <div style={styles.error}>{error}</div>;
 
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
-      <div style={styles.sidebar}>
-        <div style={styles.logoContainer}>
-          <div style={styles.logo}>ORBIT</div>
-          <div style={styles.logoBadge}>Admin</div>
-        </div>
-
-        <nav style={styles.nav}>
-          {sections.map(section => (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              style={{
-                ...styles.navItem,
-                backgroundColor: activeSection === section.id ? '#2563eb' : 'transparent',
-                color: activeSection === section.id ? '#fff' : '#94a3b8'
-              }}
-            >
-              <span style={styles.navIcon}>{section.icon}</span>
-              {section.label}
-            </button>
-          ))}
-        </nav>
-
-        <div style={styles.sidebarFooter}>
-          <div style={styles.adminCard}>
-            <div style={styles.adminAvatar}>
-              {adminInfo?.email?.charAt(0).toUpperCase()}
-            </div>
-            <div style={styles.adminInfo}>
-              <div style={styles.adminEmail}>{adminInfo?.email}</div>
-              <div style={styles.adminRole}>{adminInfo?.role}</div>
-            </div>
-          </div>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            <span style={styles.logoutIcon}>🚪</span>
-            Déconnexion
-          </button>
-        </div>
+      <div style={styles.header}>
+        <h3 style={styles.title}>Liste des clients</h3>
+        <span style={styles.count}>{clients.length} client(s)</span>
       </div>
 
-      {/* Contenu principal */}
-      <div style={styles.main}>
-        {/* En-tête */}
-        <header style={styles.header}>
-          <div style={styles.headerLeft}>
-            <h1 style={styles.pageTitle}>
-              {sections.find(s => s.id === activeSection)?.label}
-            </h1>
-          </div>
-          <div style={styles.headerRight}>
-            <div style={styles.notificationWrapper}>
-              <NotificationBadge />
-            </div>
-          </div>
-        </header>
-
-        {/* Contenu */}
-        <div style={styles.content}>
-          {renderSection()}
-        </div>
+      <div style={styles.tableWrapper}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Société</th>
+              <th style={styles.th}>Email</th>
+              <th style={styles.th}>Téléphone</th>
+              <th style={styles.th}>Adresse</th>
+              <th style={styles.th}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clients.map(client => (
+              <tr key={client._id} style={styles.tr}>
+                <td style={styles.td}>
+                  <span style={styles.clientName}>{client.nomSociete}</span>
+                </td>
+                <td style={styles.td}>{client.email}</td>
+                <td style={styles.td}>{client.telephone || '-'}</td>
+                <td style={styles.td}>{client.adresse || '-'}</td>
+                <td style={styles.td}>
+                  <div style={styles.actions}>
+                    <button style={styles.editButton}>
+                      <span style={styles.buttonIcon}>✏️</span>
+                      Modifier
+                    </button>
+                    <button 
+                      style={styles.deleteButton}
+                      onClick={() => handleDelete(client._id)}
+                    >
+                      <span style={styles.buttonIcon}>🗑️</span>
+                      Supprimer
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      <ToastContainer />
     </div>
   );
 }
 
-// Styles professionnels
 const styles = {
   container: {
-    display: 'flex',
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc',
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  },
-  sidebar: {
-    width: '280px',
-    backgroundColor: '#1e293b',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    boxShadow: '4px 0 20px rgba(0,0,0,0.05)'
-  },
-  logoContainer: {
-    padding: '32px 24px',
-    borderBottom: '1px solid #334155'
-  },
-  logo: {
-    fontSize: '1.8rem',
-    fontWeight: 700,
-    color: '#fff',
-    marginBottom: '4px',
-    letterSpacing: '-0.5px'
-  },
-  logoBadge: {
-    fontSize: '0.8rem',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: '1px'
-  },
-  nav: {
-    flex: 1,
-    padding: '24px 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-  navItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px 16px',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '0.95rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    width: '100%',
-    textAlign: 'left'
-  },
-  navIcon: {
-    fontSize: '1.2rem'
-  },
-  sidebarFooter: {
-    padding: '24px 16px',
-    borderTop: '1px solid #334155'
-  },
-  adminCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '16px'
-  },
-  adminAvatar: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
-    backgroundColor: '#2563eb',
-    color: '#fff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.2rem',
-    fontWeight: 600
-  },
-  adminInfo: {
-    flex: 1
-  },
-  adminEmail: {
-    color: '#fff',
-    fontSize: '0.9rem',
-    fontWeight: 500,
-    marginBottom: '4px'
-  },
-  adminRole: {
-    color: '#94a3b8',
-    fontSize: '0.8rem'
-  },
-  logoutButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    backgroundColor: '#334155',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    width: '100%',
-    ':hover': {
-      backgroundColor: '#475569'
-    }
-  },
-  logoutIcon: {
-    fontSize: '1rem'
-  },
-  main: {
-    flex: 1,
-    marginLeft: '280px',
-    padding: '32px'
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    padding: '24px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '32px'
+    marginBottom: '20px'
   },
-  headerLeft: {
-    flex: 1
-  },
-  pageTitle: {
-    fontSize: '2rem',
+  title: {
+    fontSize: '1.1rem',
     fontWeight: 600,
-    color: '#0f172a',
+    color: '#1e293b',
     margin: 0
   },
-  headerRight: {
+  count: {
+    backgroundColor: '#f1f5f9',
+    color: '#64748b',
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '0.85rem',
+    fontWeight: 500
+  },
+  loading: {
+    textAlign: 'center',
+    padding: '40px',
+    color: '#64748b'
+  },
+  error: {
+    textAlign: 'center',
+    padding: '40px',
+    color: '#ef4444'
+  },
+  tableWrapper: {
+    overflowX: 'auto'
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse'
+  },
+  th: {
+    textAlign: 'left',
+    padding: '12px 16px',
+    backgroundColor: '#f8fafc',
+    color: '#64748b',
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    borderBottom: '2px solid #e2e8f0'
+  },
+  tr: {
+    borderBottom: '1px solid #e2e8f0',
+    transition: 'background-color 0.2s',
+    ':hover': {
+      backgroundColor: '#f8fafc'
+    }
+  },
+  td: {
+    padding: '16px',
+    color: '#334155',
+    fontSize: '0.95rem'
+  },
+  clientName: {
+    fontWeight: 500,
+    color: '#1e293b'
+  },
+  actions: {
+    display: 'flex',
+    gap: '8px'
+  },
+  editButton: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px'
+    gap: '4px',
+    padding: '6px 12px',
+    backgroundColor: '#f1f5f9',
+    color: '#475569',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    ':hover': {
+      backgroundColor: '#e2e8f0'
+    }
   },
-  notificationWrapper: {
-    position: 'relative'
+  deleteButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    backgroundColor: '#fef2f2',
+    color: '#ef4444',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    ':hover': {
+      backgroundColor: '#fee2e2'
+    }
   },
-  content: {
-    maxWidth: '1400px'
+  buttonIcon: {
+    fontSize: '0.9rem'
   }
 };
 
-export default AdminDashboard;
+export default ClientList;
