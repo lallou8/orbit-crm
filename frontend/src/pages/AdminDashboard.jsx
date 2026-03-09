@@ -12,6 +12,7 @@ import Messagerie from '../components/Messagerie';
 import NotificationBadge from '../components/NotificationBadge';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import AdminTicketList from '../components/AdminTicketList'; // ✅ AJOUTÉ
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ function AdminDashboard() {
     { id: 'interventions', label: 'Interventions', icon: '🔧' },
     { id: 'factures', label: 'Factures', icon: '💰' },
     { id: 'projets', label: 'Projets', icon: '📋' },
-    { id: 'messagerie', label: 'Messagerie', icon: '📬' }
+    { id: 'messagerie', label: 'Messagerie', icon: '📬' },
+    { id: 'tickets', label: 'Tickets', icon: '🎫' } // ✅ AJOUTÉ
   ];
 
   const renderSection = () => {
@@ -76,6 +78,12 @@ function AdminDashboard() {
         );
       case 'messagerie':
         return <Messagerie />;
+      case 'tickets': // ✅ AJOUTÉ
+        return (
+          <div style={styles.section}>
+            <AdminTicketList />
+          </div>
+        );
       default:
         return <StatsDashboard />;
     }
@@ -297,6 +305,12 @@ const styles = {
   },
   content: {
     maxWidth: '1400px'
+  },
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    padding: '24px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
   }
 };
 
